@@ -58,3 +58,4 @@
 - Mostrar o grid visualmente (com `matplotlib` ou até `pygame`).
 - Registrar a movimentação dos agentes (log).
 - Gravar estatísticas finais (tempo total, utilidade total, recursos coletados).
+- Dica usar framework MESA:  https://mesa.readthedocs.io/latest/#using-mesa
