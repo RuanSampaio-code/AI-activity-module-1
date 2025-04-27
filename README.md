@@ -8,7 +8,7 @@
 - Maximizar a eficiência e terminar antes de uma tempestade de radiação.
 
 **Data de Entrega**:  
-🗓️ **Terça-feira, 26/11/2024**
+🗓️ **Terça-feira, 08/05/2025**
 
 **Requisitos principais**:  
 ✅ Programar diferentes tipos de agentes.  
