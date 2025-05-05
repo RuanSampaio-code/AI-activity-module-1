@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agente Coletor de Recursos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      align-items: flex-start;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-template-rows: repeat(10, 30px);
+      gap: 2px;
+      background-color: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      line-height: 30px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    .agent { background-color: #4caf50; color: white; font-weight: bold; }
+    .cristal { background-color: #00bcd4; }
+    .metal { background-color: #ff9800; }
+    .estrutura { background-color: #9c27b0; }
+    .base { background-color: #607d8b; color: white; }
+    #panel {
+      min-width: 200px;
+    }
+    button {
+      margin: 5px 0;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .legenda {
+      margin-top: 20px;
+    }
+    .legenda div {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="grid" id="grid"></div>
+    <div id="panel">
+      <h3>Painel do Agente</h3>
+      <p><strong>Pontos:</strong> <span id="score">0</span></p>
+      <button onclick="iniciarSimulacao()">Iniciar</button><br>
+      <button onclick="pausarSimulacao()">Pausar</button><br>
+      <button onclick="novaColeta()">Nova Coleta</button>
+      <div class="legenda">
+        <h4>Legenda de Recursos</h4>
+        <div><span class="cell cristal">C</span> Cristais Energéticos (10 pts)</div>
+        <div><span class="cell metal">M</span> Blocos de Metal Raro (20 pts)</div>
+        <div><span class="cell estrutura">E</span> Estruturas Antigas (50 pts)</div>
+        <div><span class="cell base">B</span> Base do Agente</div>
+        <div><span class="cell agent">A</span> Agente</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const gridSize = 10;
+    const grid = document.getElementById("grid");
+    const scoreDisplay = document.getElementById("score");
+    let score = 0;
+    let intervalo = null;
+
+    const recursoTipos = {
+      'C': { class: 'cristal', valor: 10 },
+      'M': { class: 'metal', valor: 20 },
+      'E': { class: 'estrutura', valor: 50 },
+    };
+
+    const mapa = [];
+    let agente = { x: 0, y: 0 };
+    const base = { x: 0, y: 0 };
+
+    function criarMapa() {
+      for (let i = 0; i < gridSize; i++) {
+        mapa[i] = [];
+        for (let j = 0; j < gridSize; j++) {
+          let tipo = '.';
+          const rand = Math.random();
+          if (rand < 0.1) tipo = 'C';
+          else if (rand < 0.15) tipo = 'M';
+          else if (rand < 0.18) tipo = 'E';
+          mapa[i][j] = tipo;
+        }
+      }
+      mapa[base.x][base.y] = 'B';
+      agente = { x: base.x, y: base.y };
+    }
+
+    function renderMapa() {
+      grid.innerHTML = '';
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const div = document.createElement("div");
+          div.className = "cell";
+          const valor = mapa[i][j];
+
+          if (agente.x === i && agente.y === j) {
+            div.classList.add("agent");
+            div.textContent = "A";
+          } else if (valor === 'B') {
+            div.classList.add("base");
+            div.textContent = "B";
+          } else if (recursoTipos[valor]) {
+            div.classList.add(recursoTipos[valor].class);
+            div.textContent = valor;
+          }
+
+          grid.appendChild(div);
+        }
+      }
+    }
+
+    function moverAleatorio() {
+      const direcoes = [
+        [0, 1], [0, -1], [1, 0], [-1, 0]
+      ];
+      const [dx, dy] = direcoes[Math.floor(Math.random() * direcoes.length)];
+      const nx = Math.max(0, Math.min(gridSize - 1, agente.x + dx));
+      const ny = Math.max(0, Math.min(gridSize - 1, agente.y + dy));
+      agente.x = nx;
+      agente.y = ny;
+    }
+
+    function coletarRecurso() {
+      const celula = mapa[agente.x][agente.y];
+      if (celula === 'C' || celula === 'M') {
+        score += recursoTipos[celula].valor;
+        scoreDisplay.textContent = score;
+        mapa[agente.x][agente.y] = '.';
+      }
+    }
+
+    function ciclo() {
+      moverAleatorio();
+      coletarRecurso();
+      renderMapa();
+    }
+
+    function iniciarSimulacao() {
+      if (!intervalo) {
+        intervalo = setInterval(ciclo, 800);
+      }
+    }
+
+    function pausarSimulacao() {
+      clearInterval(intervalo);
+      intervalo = null;
+    }
+
+    function novaColeta() {
+      score = 0;
+      scoreDisplay.textContent = score;
+      criarMapa();
+      renderMapa();
+    }
+
+    criarMapa();
+    renderMapa();
+  </script>
+</body>
+</html>
