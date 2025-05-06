@@ -1,0 +1,52 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+  }
+  .container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+  }
+  .painel-esquerdo {
+    min-width: 220px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(10, 30px);
+    grid-template-rows: repeat(10, 30px);
+    gap: 2px;
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+  }
+  .cell {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+  .agent { background-color: #4caf50; color: white; font-weight: bold; }
+  .goal { background-color: #f44336; color: white; font-weight: bold; }
+  .cristal { background-color: #00bcd4; }
+  .metal { background-color: #ff9800; }
+  .estrutura { background-color: #9c27b0; }
+  .base { background-color: #607d8b; color: white; }
+  button {
+    margin: 5px 0;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .legenda {
+    margin-top: 20px;
+  }
+  .legenda div {
+    margin-bottom: 5px;
+  }
