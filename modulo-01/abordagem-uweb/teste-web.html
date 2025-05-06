@@ -178,15 +178,70 @@
       scoreTotalDisplay.textContent = scoreA + scoreS + scoreG;
     }
 
+    function processarRecurso(recurso) {
+      agente.retornando = true; // Iniciar retorno para a base
+      agente.recursoColetado = recurso; // Armazenar o recurso coletado
+    }
+
     function moverAleatorio() {
-      const dir = [[0,1],[0,-1],[1,0],[-1,0]];
-      const [dx, dy] = dir[Math.floor(Math.random()*4)];
+      const direcoes = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+      if (agente.retornando) {
+        // Caminho de volta para a base
+        if (agente.x > 0) agente.x--;
+        else if (agente.y > 0) agente.y--;
+
+        if (agente.x === 0 && agente.y === 0) {
+          // Chegou na base, pontuar
+          if (agente.recursoColetado) {
+            scoreA += recursoTipos[agente.recursoColetado].valor;
+            atualizarPontuacoes();
+            agente.recursoColetado = null; // Limpar recurso coletado
+          }
+          agente.retornando = false; // Finalizar retorno
+        }
+        return;
+      }
+
+      const [dx, dy] = direcoes[Math.floor(Math.random() * direcoes.length)];
+
+      // Atualizar posição do agente
       agente.x = Math.max(0, Math.min(gridSize - 1, agente.x + dx));
       agente.y = Math.max(0, Math.min(gridSize - 1, agente.y + dy));
+
+      // Verificar se coletou recurso
+      const recursoAtual = mapa[agente.x][agente.y];
+      if (recursoAtual === 'C' || recursoAtual === 'M') { // Apenas coleta C ou M
+        processarRecurso(recursoAtual);
+        mapa[agente.x][agente.y] = '.'; // Remover recurso coletado
+      }
+    }
+
+    function processarRecursoEstado(recurso) {
+      agenteEstado.retornando = true; // Iniciar retorno para a base
+      agenteEstado.recursoColetado = recurso; // Armazenar o recurso coletado
     }
 
     function moverComEstado() {
       const dir = [[0,1],[0,-1],[1,0],[-1,0]];
+
+      if (agenteEstado.retornando) {
+        // Caminho de volta para a base
+        if (agenteEstado.x > 0) agenteEstado.x--;
+        else if (agenteEstado.y > 0) agenteEstado.y--;
+
+        if (agenteEstado.x === 0 && agenteEstado.y === 0) {
+          // Chegou na base, pontuar
+          if (agenteEstado.recursoColetado) {
+            scoreS += recursoTipos[agenteEstado.recursoColetado].valor;
+            atualizarPontuacoes();
+            agenteEstado.recursoColetado = null; // Limpar recurso coletado
+          }
+          agenteEstado.retornando = false; // Finalizar retorno
+        }
+        return;
+      }
+
       const opcoes = dir.map(([dx,dy]) => [agenteEstado.x+dx, agenteEstado.y+dy])
         .filter(([x,y]) =>
           x >= 0 && y >= 0 && x < gridSize && y < gridSize &&
@@ -198,6 +253,13 @@
       agenteEstado.x = nx;
       agenteEstado.y = ny;
       agenteEstado.memoria.add(`${nx},${ny}`);
+
+      // Verificar se coletou recurso
+      const recursoAtual = mapa[agenteEstado.x][agenteEstado.y];
+      if (recursoTipos[recursoAtual]) {
+        processarRecursoEstado(recursoAtual);
+        mapa[agenteEstado.x][agenteEstado.y] = '.'; // Remover recurso coletado
+      }
     }
 
     function moverObjetivo() {
