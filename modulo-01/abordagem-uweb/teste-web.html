@@ -2,8 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Agentes Coletando Recursos</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Agentes Coletores Inteligentes</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,50 +11,123 @@
       align-items: flex-start;
       height: 100vh;
       margin: 0;
+      padding: 20px;
       background-color: #f0f0f0;
     }
     .container {
       display: flex;
       gap: 30px;
       align-items: flex-start;
+      max-width: 1200px;
     }
     .painel-esquerdo {
       min-width: 220px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .grid-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .grid-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(10, 30px);
-      grid-template-rows: repeat(10, 30px);
       gap: 2px;
       background-color: #fff;
       padding: 10px;
       border: 1px solid #ccc;
+      border-radius: 5px;
     }
     .cell {
       width: 30px;
       height: 30px;
       text-align: center;
       line-height: 30px;
-      border: 1px solid #ccc;
+      border: 1px solid #eee;
       font-size: 14px;
+      background-color: #fff;
     }
-    .agent { background-color: #4caf50; color: white; font-weight: bold; }
-    .goal { background-color: #f44336; color: white; font-weight: bold; }
-    .cristal { background-color: #00bcd4; }
-    .metal { background-color: #ff9800; }
-    .estrutura { background-color: #9c27b0; }
+    .agent-simple { background-color: #4caf50; color: white; }
+    .agent-estado { background-color: #2196F3; color: white; }
+    .agent-objetivo { background-color: #e91e63; color: white; }
+    .cristal { background-color: #00bcd4; color: white; }
+    .metal { background-color: #ff9800; color: white; }
+    .estrutura { background-color: #9c27b0; color: white; }
     .base { background-color: #607d8b; color: white; }
     button {
       margin: 5px 0;
-      padding: 6px 12px;
+      padding: 8px 12px;
       font-size: 14px;
       cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    #pauseBtn {
+      background-color: #ff9800;
+    }
+    #pauseBtn:hover {
+      background-color: #f57c00;
+    }
+    #resetBtn {
+      background-color: #f44336;
+    }
+    #resetBtn:hover {
+      background-color: #d32f2f;
     }
     .legenda {
       margin-top: 20px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     .legenda div {
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .log {
+      margin-top: 20px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .log p {
+      margin: 5px 0;
+      padding: 3px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+    select {
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .scores {
+      margin-bottom: 15px;
+    }
+    .global-score {
+      font-size: 1.2em;
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f8f8f8;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -63,294 +135,599 @@
   <div class="container">
     <div class="painel-esquerdo">
       <h3>Pontuação</h3>
-      <p><strong>Agente Aleatório (A):</strong> <span id="scoreA">0</span></p>
-      <p><strong>Agente com Estado (S):</strong> <span id="scoreS">0</span></p>
-      <p><strong>Agente por Objetivo (G):</strong> <span id="scoreG">0</span></p>
-      <hr>
-      <p><strong>Total:</strong> <span id="scoreTotal">0</span></p>
+      <div class="global-score">
+        <strong>Total Global:</strong> <span id="globalScore">0</span> pts
+      </div>
+      <div class="scores">
+        <p><strong>Agente Simples:</strong> <span id="scoreSimple">0</span> pts</p>
+        <p><strong>Agente Estado:</strong> <span id="scoreState">0</span> pts</p>
+        <p><strong>Agente Objetivo:</strong> <span id="scoreObjective">0</span> pts</p>
+        <hr>
+        <p><strong>Cristais Coletados:</strong> <span id="crystals">0</span></p>
+        <p><strong>Metais Coletados:</strong> <span id="metals">0</span></p>
+      </div>
+      <div class="grid-controls">
+        <label for="mapSize">Tamanho:</label>
+        <select id="mapSize">
+          <option value="8">8x8</option>
+          <option value="10">10x10</option>
+          <option value="12">12x12</option>
+          <option value="20">20x20</option>
+        </select>
+      </div>
+      <button id="startBtn">Iniciar</button>
+      <button id="pauseBtn">Pausar</button>
+      <button id="resetBtn">Reiniciar</button>
     </div>
 
-    <div class="grid" id="grid"></div>
+    <div class="grid-container">
+      <div class="grid" id="map"></div>
+      <div class="log" id="actionLog"></div>
+    </div>
 
-    <div id="panel">
-      <h3>Painel de Controle</h3>
-      <button onclick="iniciarSimulacao()">Iniciar</button><br>
-      <button onclick="pausarSimulacao()">Pausar</button><br>
-      <button onclick="novaColeta()">Nova Coleta</button>
-      <div class="legenda">
-        <h4>Legenda</h4>
-        <div><span class="cell cristal">C</span> Cristais Energéticos (10 pts)</div>
-        <div><span class="cell metal">M</span> Blocos de Metal Raro (20 pts)</div>
-        <div><span class="cell estrutura">E</span> Estruturas Antigas (50 pts)</div>
-        <div><span class="cell base">B</span> Base dos agentes</div>
-        <div><span class="cell agent">A</span> Agente Aleatório</div>
-        <div><span class="cell agent">S</span> Agente com Estado</div>
-        <div><span class="cell goal">G</span> Agente Baseado em Objetivos</div>
-      </div>
+    <div class="legenda">
+      <h4>Legenda</h4>
+      <div><span class="cell base">🏠</span> Base</div>
+      <div><span class="cell agent-simple">🤖</span> Agente Simples</div>
+      <div><span class="cell agent-estado">🤖</span> Agente Estado</div>
+      <div><span class="cell agent-objetivo">🤖</span> Agente Objetivo</div>
+      <div><span class="cell cristal">💎</span> Cristais (10 pts)</div>
+      <div><span class="cell metal">⛓️</span> Metais (20 pts)</div>
+      <div><span class="cell estrutura">🏛️</span> Estruturas (50 pts)</div>
     </div>
   </div>
 
   <script>
-    const gridSize = 10;
-    const grid = document.getElementById("grid");
-    const scoreADisplay = document.getElementById("scoreA");
-    const scoreSDisplay = document.getElementById("scoreS");
-    const scoreGDisplay = document.getElementById("scoreG");
-    const scoreTotalDisplay = document.getElementById("scoreTotal");
-
-    let scoreA = 0, scoreS = 0, scoreG = 0;
-    let intervalo = null;
-
-    const recursoTipos = {
-      'C': { class: 'cristal', valor: 10 },
-      'M': { class: 'metal', valor: 20 },
-      'E': { class: 'estrutura', valor: 50 },
+    const config = {
+        mapSize: 8,
+        resources: {
+            crystal: { symbol: '💎', value: 10, class: 'cristal' },
+            metal: { symbol: '⛓️', value: 20, class: 'metal' },
+            structure: { symbol: '🏛️', value: 50, class: 'estrutura' }
+        },
+        base: { symbol: '🏠', class: 'base' }
     };
 
-    const mapa = [];
-    const base = { x: 0, y: 0 };
-    let agente = { x: 0, y: 0 };
-    let agenteEstado = { x: 0, y: 0, memoria: new Set() };
-    let agenteObjetivo = {
-      x: 0, y: 0,
-      carregando: false,
-      alvo: null
-    };
-
-    function criarMapa() {
-      for (let i = 0; i < gridSize; i++) {
-        mapa[i] = [];
-        for (let j = 0; j < gridSize; j++) {
-          let tipo = '.';
-          const rand = Math.random();
-          if (rand < 0.1) tipo = 'C';
-          else if (rand < 0.15) tipo = 'M';
-          else if (rand < 0.18) tipo = 'E';
-          mapa[i][j] = tipo;
-        }
-      }
-      mapa[base.x][base.y] = 'B';
-      agente = { x: base.x, y: base.y };
-      agenteEstado = { x: base.x, y: base.y, memoria: new Set([`${base.x},${base.y}`]) };
-      agenteObjetivo = { x: base.x, y: base.y, carregando: false, alvo: null };
-    }
-
-    function renderMapa() {
-      grid.innerHTML = '';
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          const div = document.createElement("div");
-          div.className = "cell";
-
-          const isA = agente.x === i && agente.y === j;
-          const isS = agenteEstado.x === i && agenteEstado.y === j;
-          const isG = agenteObjetivo.x === i && agenteObjetivo.y === j;
-
-          if (isG) {
-            div.classList.add("goal");
-            div.textContent = "G";
-          } else if (isA) {
-            div.classList.add("agent");
-            div.textContent = "A";
-          } else if (isS) {
-            div.classList.add("agent");
-            div.textContent = "S";
-          } else {
-            const val = mapa[i][j];
-            if (val === 'B') {
-              div.classList.add("base");
-              div.textContent = "B";
-            } else if (recursoTipos[val]) {
-              div.classList.add(recursoTipos[val].class);
-              div.textContent = val;
+    let state = {
+        map: [],
+        agents: {
+            simple: {
+                x: 0,
+                y: 0,
+                carrying: null,
+                score: 0,
+                symbol: '🤖',
+                class: 'agent-simple'
+            },
+            state: {
+                x: 0,
+                y: 0,
+                carrying: null,
+                score: 0,
+                visitedCells: new Set(['0,0']),
+                symbol: '🤖',
+                class: 'agent-estado'
+            },
+            objetivo: {
+                x: 0,
+                y: 0,
+                carrying: null,
+                score: 0,
+                knownResources: new Map(),
+                symbol: '🤖',
+                class: 'agent-objetivo'
             }
-          }
+        },
+        crystalsCollected: 0,
+        metalsCollected: 0,
+        isRunning: false,
+        intervalId: null,
+        speed: 500
+    };
 
-          grid.appendChild(div);
-        }
-      }
+    const mapElement = document.getElementById('map');
+    const scoreSimpleElement = document.getElementById('scoreSimple');
+    const scoreStateElement = document.getElementById('scoreState');
+    const scoreObjectiveElement = document.getElementById('scoreObjective');
+    const globalScoreElement = document.getElementById('globalScore');
+    const crystalsElement = document.getElementById('crystals');
+    const metalsElement = document.getElementById('metals');
+    const actionLog = document.getElementById('actionLog');
+    const mapSizeSelect = document.getElementById('mapSize');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function init() {
+        createMap();
+        placeBase();
+        placeAgents();
+        placeResources();
+        renderMap();
     }
 
-    function atualizarPontuacoes() {
-      scoreADisplay.textContent = scoreA;
-      scoreSDisplay.textContent = scoreS;
-      scoreGDisplay.textContent = scoreG;
-      scoreTotalDisplay.textContent = scoreA + scoreS + scoreG;
-    }
-
-    function processarRecurso(recurso) {
-      agente.retornando = true; // Iniciar retorno para a base
-      agente.recursoColetado = recurso; // Armazenar o recurso coletado
-    }
-
-    function moverAleatorio() {
-      const direcoes = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-
-      if (agente.retornando) {
-        // Caminho de volta para a base
-        if (agente.x > 0) agente.x--;
-        else if (agente.y > 0) agente.y--;
-
-        if (agente.x === 0 && agente.y === 0) {
-          // Chegou na base, pontuar
-          if (agente.recursoColetado) {
-            scoreA += recursoTipos[agente.recursoColetado].valor;
-            atualizarPontuacoes();
-            agente.recursoColetado = null; // Limpar recurso coletado
-          }
-          agente.retornando = false; // Finalizar retorno
-        }
-        return;
-      }
-
-      const [dx, dy] = direcoes[Math.floor(Math.random() * direcoes.length)];
-
-      // Atualizar posição do agente
-      agente.x = Math.max(0, Math.min(gridSize - 1, agente.x + dx));
-      agente.y = Math.max(0, Math.min(gridSize - 1, agente.y + dy));
-
-      // Verificar se coletou recurso
-      const recursoAtual = mapa[agente.x][agente.y];
-      if (recursoAtual === 'C' || recursoAtual === 'M') { // Apenas coleta C ou M
-        processarRecurso(recursoAtual);
-        mapa[agente.x][agente.y] = '.'; // Remover recurso coletado
-      }
-    }
-
-    function processarRecursoEstado(recurso) {
-      agenteEstado.retornando = true; // Iniciar retorno para a base
-      agenteEstado.recursoColetado = recurso; // Armazenar o recurso coletado
-    }
-
-    function moverComEstado() {
-      const dir = [[0,1],[0,-1],[1,0],[-1,0]];
-
-      if (agenteEstado.retornando) {
-        // Caminho de volta para a base
-        if (agenteEstado.x > 0) agenteEstado.x--;
-        else if (agenteEstado.y > 0) agenteEstado.y--;
-
-        if (agenteEstado.x === 0 && agenteEstado.y === 0) {
-          // Chegou na base, pontuar
-          if (agenteEstado.recursoColetado) {
-            scoreS += recursoTipos[agenteEstado.recursoColetado].valor;
-            atualizarPontuacoes();
-            agenteEstado.recursoColetado = null; // Limpar recurso coletado
-          }
-          agenteEstado.retornando = false; // Finalizar retorno
-        }
-        return;
-      }
-
-      const opcoes = dir.map(([dx,dy]) => [agenteEstado.x+dx, agenteEstado.y+dy])
-        .filter(([x,y]) =>
-          x >= 0 && y >= 0 && x < gridSize && y < gridSize &&
-          !agenteEstado.memoria.has(`${x},${y}`)
+    function createMap() {
+        state.map = Array(config.mapSize).fill().map(() => 
+            Array(config.mapSize).fill(null)
         );
-      const [nx, ny] = opcoes.length > 0 ?
-        opcoes[Math.floor(Math.random()*opcoes.length)] :
-        [Math.max(0,Math.min(gridSize-1, agenteEstado.x + dir[0][0])), Math.max(0,Math.min(gridSize-1, agenteEstado.y + dir[0][1]))];
-      agenteEstado.x = nx;
-      agenteEstado.y = ny;
-      agenteEstado.memoria.add(`${nx},${ny}`);
-
-      // Verificar se coletou recurso
-      const recursoAtual = mapa[agenteEstado.x][agenteEstado.y];
-      if (recursoTipos[recursoAtual]) {
-        processarRecursoEstado(recursoAtual);
-        mapa[agenteEstado.x][agenteEstado.y] = '.'; // Remover recurso coletado
-      }
+        mapElement.style.gridTemplateColumns = `repeat(${config.mapSize}, 30px)`;
+        mapElement.style.gridTemplateRows = `repeat(${config.mapSize}, 30px)`;
+        mapElement.innerHTML = '';
     }
 
-    function moverObjetivo() {
-      if (!agenteObjetivo.carregando) {
-        if (!agenteObjetivo.alvo || mapa[agenteObjetivo.alvo.x][agenteObjetivo.alvo.y] === '.') {
-          agenteObjetivo.alvo = encontrarRecursoMaisProximo();
-        }
-        if (agenteObjetivo.alvo) {
-          moverPara(agenteObjetivo, agenteObjetivo.alvo);
-          if (agenteObjetivo.x === agenteObjetivo.alvo.x && agenteObjetivo.y === agenteObjetivo.alvo.y) {
-            agenteObjetivo.carregando = true;
-            agenteObjetivo.tipoColetado = mapa[agenteObjetivo.x][agenteObjetivo.y];
-            mapa[agenteObjetivo.x][agenteObjetivo.y] = '.';
-          }
-        }
-      } else {
-        moverPara(agenteObjetivo, base);
-        if (agenteObjetivo.x === base.x && agenteObjetivo.y === base.y) {
-          scoreG += recursoTipos[agenteObjetivo.tipoColetado].valor;
-          agenteObjetivo.carregando = false;
-          agenteObjetivo.alvo = null;
-          atualizarPontuacoes();
-        }
-      }
+    function placeBase() {
+        state.map[0][0] = { type: 'base', ...config.base };
     }
 
-    function encontrarRecursoMaisProximo() {
-      let menor = null;
-      let dist = Infinity;
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          const val = mapa[i][j];
-          if (val === 'C' || val === 'M') {
-            const d = Math.abs(i - agenteObjetivo.x) + Math.abs(j - agenteObjetivo.y);
-            if (d < dist) {
-              menor = { x: i, y: j };
-              dist = d;
+    function placeAgents() {
+        state.agents.simple.x = 0;
+        state.agents.simple.y = 0;
+        state.agents.state.x = 0;
+        state.agents.state.y = 0;
+        state.agents.objetivo.x = 0;
+        state.agents.objetivo.y = 0;
+        state.agents.state.visitedCells = new Set(['0,0']);
+        state.agents.objetivo.knownResources = new Map();
+    }
+
+    function placeResources() {
+        for (let y = 0; y < config.mapSize; y++) {
+            for (let x = 0; x < config.mapSize; x++) {
+                if (state.map[y][x] && state.map[y][x].type !== 'base') {
+                    state.map[y][x] = null;
+                }
             }
-          }
         }
-      }
-      return menor;
+
+        const totalCells = config.mapSize * config.mapSize;
+        const resourceCount = Math.floor(totalCells * 0.2);
+        
+        for (let i = 0; i < resourceCount; i++) {
+            const x = Math.floor(Math.random() * config.mapSize);
+            const y = Math.floor(Math.random() * config.mapSize);
+            
+            if ((x !== 0 || y !== 0) && !state.map[y][x]) {
+                const rand = Math.random();
+                let resourceType;
+                
+                if (rand < 0.6) resourceType = 'crystal';
+                else if (rand < 0.9) resourceType = 'metal';
+                else resourceType = 'structure';
+                
+                state.map[y][x] = { 
+                    type: 'resource', 
+                    resource: resourceType, 
+                    ...config.resources[resourceType] 
+                };
+            }
+        }
     }
 
-    function moverPara(agente, destino) {
-      const dx = destino.x - agente.x;
-      const dy = destino.y - agente.y;
-      if (dx !== 0) agente.x += dx / Math.abs(dx);
-      else if (dy !== 0) agente.y += dy / Math.abs(dy);
+    function renderMap() {
+        mapElement.innerHTML = '';
+        
+        for (let y = 0; y < config.mapSize; y++) {
+            for (let x = 0; x < config.mapSize; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                
+                if (state.map[y][x]?.type === 'base') {
+                    cell.classList.add(config.base.class);
+                    cell.textContent = config.base.symbol;
+                }
+                else {
+                    const agentsHere = [];
+                    if (x === state.agents.simple.x && y === state.agents.simple.y) agentsHere.push(state.agents.simple);
+                    if (x === state.agents.state.x && y === state.agents.state.y) agentsHere.push(state.agents.state);
+                    if (x === state.agents.objetivo.x && y === state.agents.objetivo.y) agentsHere.push(state.agents.objetivo);
+                    
+                    if (agentsHere.length > 0) {
+                        const agent = agentsHere[0];
+                        cell.classList.add(agent.class);
+                        cell.textContent = agent.symbol;
+                        if (agent.carrying) cell.textContent += agent.carrying.symbol;
+                    }
+                    else if (state.map[y][x]?.type === 'resource') {
+                        const resource = state.map[y][x];
+                        cell.classList.add(resource.class);
+                        cell.textContent = resource.symbol;
+                    }
+                }
+                
+                mapElement.appendChild(cell);
+            }
+        }
     }
 
-    function coletarRecurso() {
-      const c = mapa[agente.x][agente.y];
-      if (recursoTipos[c]) {
-        scoreA += recursoTipos[c].valor;
-        mapa[agente.x][agente.y] = '.';
-        atualizarPontuacoes();
-      }
+    function moveAgents() {
+        if (!state.isRunning) return;
+
+        moveSimpleAgent();
+        moveStateAgent();
+        moveObjectiveAgent();
+        renderMap();
     }
 
-    function coletarRecursoEstado() {
-      const c = mapa[agenteEstado.x][agenteEstado.y];
-      if (recursoTipos[c]) {
-        scoreS += recursoTipos[c].valor;
-        mapa[agenteEstado.x][agenteEstado.y] = '.';
-        atualizarPontuacoes();
-      }
+    function moveSimpleAgent() {
+        const agent = state.agents.simple;
+        if (agent.carrying) {
+            const path = findPathToBase(agent);
+            if (path.length > 1) {
+                const nextStep = path[1];
+                moveAgentTo(agent, nextStep.x, nextStep.y);
+            }
+        } else {
+            const directions = [
+                {dx: 0, dy: -1}, {dx: 1, dy: 0}, 
+                {dx: 0, dy: 1}, {dx: -1, dy: 0}
+            ];
+            const validMoves = directions.filter(({dx, dy}) => {
+                const newX = agent.x + dx;
+                const newY = agent.y + dy;
+                return isValidPosition(newX, newY);
+            });
+            
+            if (validMoves.length > 0) {
+                const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+                moveAgentTo(agent, agent.x + move.dx, agent.y + move.dy);
+            }
+        }
     }
 
-    function ciclo() {
-      moverAleatorio(); coletarRecurso();
-      moverComEstado(); coletarRecursoEstado();
-      moverObjetivo();
-      renderMapa();
+    function moveStateAgent() {
+        const agent = state.agents.state;
+        if (agent.carrying) {
+            const path = findPathToBase(agent);
+            if (path.length > 1) {
+                const nextStep = path[1];
+                moveAgentTo(agent, nextStep.x, nextStep.y);
+            }
+        } else {
+            const candidates = getMoveCandidates(agent);
+            const bestMove = selectBestMove(candidates, agent);
+            if (bestMove) {
+                moveAgentTo(agent, bestMove.x, bestMove.y);
+            }
+        }
     }
 
-    function iniciarSimulacao() {
-      if (!intervalo) intervalo = setInterval(ciclo, 700);
+    function moveObjectiveAgent() {
+        const agent = state.agents.objetivo;
+        updateResourceKnowledge(agent);
+        
+        if (agent.carrying) {
+            const path = findPathToBase(agent);
+            if (path.length > 1) {
+                const nextStep = path[1];
+                moveAgentTo(agent, nextStep.x, nextStep.y);
+            }
+        } else {
+            const target = findNearestResource(agent);
+            if (target) {
+                const path = findPathToResource(agent, target);
+                if (path.length > 1) {
+                    const nextStep = path[1];
+                    moveAgentTo(agent, nextStep.x, nextStep.y);
+                }
+            } else {
+                exploreRandomly(agent);
+            }
+        }
     }
 
-    function pausarSimulacao() {
-      clearInterval(intervalo); intervalo = null;
+    function findNearestResource(agent) {
+        let closest = null;
+        let minDistance = Infinity;
+
+        agent.knownResources.forEach((pos) => {
+            const distance = Math.abs(agent.x - pos.x) + Math.abs(agent.y - pos.y);
+            if (distance < minDistance && state.map[pos.y][pos.x]?.type === 'resource') {
+                closest = pos;
+                minDistance = distance;
+            }
+        });
+        return closest;
     }
 
-    function novaColeta() {
-      scoreA = scoreS = scoreG = 0;
-      atualizarPontuacoes();
-      criarMapa(); renderMapa();
+    function findPathToResource(agent, target) {
+        const queue = [{ 
+            x: agent.x, 
+            y: agent.y, 
+            path: [], 
+            cost: 0 
+        }];
+        
+        const visited = new Set();
+        visited.add(`${agent.x},${agent.y}`);
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+
+            if (current.x === target.x && current.y === target.y) {
+                return current.path.concat([current]);
+            }
+
+            const neighbors = [
+                {x: current.x + 1, y: current.y},
+                {x: current.x - 1, y: current.y},
+                {x: current.x, y: current.y + 1},
+                {x: current.x, y: current.y - 1}
+            ].filter(pos => isValidPosition(pos.x, pos.y) && !visited.has(`${pos.x},${pos.y}`));
+
+            for (const neighbor of neighbors) {
+                if (!visited.has(`${neighbor.x},${neighbor.y}`)) {
+                    visited.add(`${neighbor.x},${neighbor.y}`);
+                    queue.push({
+                        x: neighbor.x,
+                        y: neighbor.y,
+                        path: current.path.concat([current]),
+                        cost: current.cost + 1
+                    });
+                }
+            }
+        }
+        return [];
     }
 
-    criarMapa(); renderMapa();
+    function exploreRandomly(agent) {
+        const directions = [
+            {dx: 0, dy: -1}, {dx: 1, dy: 0}, 
+            {dx: 0, dy: 1}, {dx: -1, dy: 0}
+        ];
+        const validMoves = directions.filter(({dx, dy}) => {
+            const newX = agent.x + dx;
+            const newY = agent.y + dy;
+            return isValidPosition(newX, newY);
+        });
+        
+        if (validMoves.length > 0) {
+            const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+            moveAgentTo(agent, agent.x + move.dx, agent.y + move.dy);
+        }
+    }
+
+    function updateResourceKnowledge(agent) {
+        for (let y = 0; y < config.mapSize; y++) {
+            for (let x = 0; x < config.mapSize; x++) {
+                if (state.map[y][x]?.type === 'resource') {
+                    const key = `${x},${y}`;
+                    if (!agent.knownResources.has(key)) {
+                        agent.knownResources.set(key, {x, y});
+                    }
+                }
+            }
+        }
+    }
+
+    function getMoveCandidates(agent) {
+        const directions = [
+            {dx: 0, dy: -1}, {dx: 1, dy: 0}, 
+            {dx: 0, dy: 1}, {dx: -1, dy: 0}
+        ];
+
+        return directions
+            .map(d => ({
+                x: agent.x + d.dx,
+                y: agent.y + d.dy,
+                weight: Math.random()
+            }))
+            .filter(pos => isValidPosition(pos.x, pos.y))
+            .map(pos => {
+                const isVisited = agent.visitedCells.has(`${pos.x},${pos.y}`);
+                const hasResource = state.map[pos.y][pos.x]?.type === 'resource';
+                
+                return {
+                    ...pos,
+                    weight: (isVisited ? -3 : 2) + 
+                            (hasResource ? 3 : 0)
+                };
+            });
+    }
+
+    function selectBestMove(candidates) {
+        const maxWeight = Math.max(...candidates.map(c => c.weight));
+        const bestCandidates = candidates.filter(c => c.weight === maxWeight);
+        return bestCandidates[Math.floor(Math.random() * bestCandidates.length)];
+    }
+
+    function findPathToBase(agent) {
+        const queue = [{ 
+            x: agent.x, 
+            y: agent.y, 
+            path: [], 
+            cost: 0 
+        }];
+        
+        const visited = new Set();
+        visited.add(`${agent.x},${agent.y}`);
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+
+            if (current.x === 0 && current.y === 0) {
+                return current.path.concat([current]);
+            }
+
+            const neighbors = [
+                {x: current.x + 1, y: current.y},
+                {x: current.x - 1, y: current.y},
+                {x: current.x, y: current.y + 1},
+                {x: current.x, y: current.y - 1}
+            ].filter(pos => isValidPosition(pos.x, pos.y) && !visited.has(`${pos.x},${pos.y}`));
+
+            for (const neighbor of neighbors) {
+                if (!visited.has(`${neighbor.x},${neighbor.y}`)) {
+                    visited.add(`${neighbor.x},${neighbor.y}`);
+                    queue.push({
+                        x: neighbor.x,
+                        y: neighbor.y,
+                        path: current.path.concat([current]),
+                        cost: current.cost + 1
+                    });
+                }
+            }
+        }
+        return [];
+    }
+
+    function moveAgentTo(agent, x, y) {
+        if (!isValidPosition(x, y)) return;
+        
+        agent.x = x;
+        agent.y = y;
+        if (agent.visitedCells) {
+            agent.visitedCells.add(`${x},${y}`);
+        }
+        checkCell(agent);
+    }
+
+    function isValidPosition(x, y) {
+        return x >= 0 && x < config.mapSize && y >= 0 && y < config.mapSize;
+    }
+
+    function checkCell(agent) {
+        const cell = state.map[agent.y][agent.x];
+        
+        if (cell?.type === 'base' && agent.carrying) {
+            deliverResource(agent);
+        }
+        else if (cell?.type === 'resource' && !agent.carrying) {
+            collectResource(agent);
+        }
+    }
+
+    function collectResource(agent) {
+        const cell = state.map[agent.y][agent.x];
+        if (cell && cell.type === 'resource') {
+            if (cell.resource === 'structure') {
+                addToLog(`${agent.class.includes('simple') ? 'Simples' : agent.class.includes('estado') ? 'Estado' : 'Objetivo'} encontrou Estrutura`);
+                return;
+            }
+            
+            agent.carrying = {
+                type: cell.resource,
+                symbol: cell.symbol,
+                value: cell.value
+            };
+            state.map[agent.y][agent.x] = null;
+            
+            addToLog(`${agent.class.includes('simple') ? 'Simples' : agent.class.includes('estado') ? 'Estado' : 'Objetivo'} coletou ${cell.resource === 'crystal' ? 'Cristal' : 'Metal'}`);
+        }
+    }
+
+    function deliverResource(agent) {
+        if (agent.carrying) {
+            agent.score += agent.carrying.value;
+            
+            if (agent.carrying.type === 'crystal') {
+                state.crystalsCollected++;
+                crystalsElement.textContent = state.crystalsCollected;
+            } else {
+                state.metalsCollected++;
+                metalsElement.textContent = state.metalsCollected;
+            }
+            
+            if (agent === state.agents.simple) {
+                scoreSimpleElement.textContent = agent.score;
+            } else if (agent === state.agents.state) {
+                scoreStateElement.textContent = agent.score;
+            } else {
+                scoreObjectiveElement.textContent = agent.score;
+            }
+            
+            updateGlobalScore();
+            addToLog(`${agent.class.includes('simple') ? 'Simples' : agent.class.includes('estado') ? 'Estado' : 'Objetivo'} entregou ${agent.carrying.type === 'crystal' ? 'Cristal' : 'Metal'}`);
+            agent.carrying = null;
+        }
+    }
+
+    function updateGlobalScore() {
+        const total = state.agents.simple.score + state.agents.state.score + state.agents.objetivo.score;
+        globalScoreElement.textContent = total;
+    }
+
+    function addToLog(message) {
+        const logEntry = document.createElement('p');
+        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        actionLog.prepend(logEntry);
+    }
+
+    startBtn.addEventListener('click', () => {
+        if (!state.isRunning) {
+            state.isRunning = true;
+            state.intervalId = setInterval(moveAgents, state.speed);
+            addToLog("Simulação iniciada");
+        }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+        if (state.isRunning) {
+            state.isRunning = false;
+            clearInterval(state.intervalId);
+            addToLog("Simulação pausada");
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        state.isRunning = false;
+        clearInterval(state.intervalId);
+        
+        config.mapSize = parseInt(mapSizeSelect.value);
+        state.crystalsCollected = 0;
+        state.metalsCollected = 0;
+        
+        state.agents.simple = {
+            x: 0,
+            y: 0,
+            carrying: null,
+            score: 0,
+            symbol: '🤖',
+            class: 'agent-simple'
+        };
+        
+        state.agents.state = {
+            x: 0,
+            y: 0,
+            carrying: null,
+            score: 0,
+            visitedCells: new Set(['0,0']),
+            symbol: '🤖',
+            class: 'agent-estado'
+        };
+        
+        state.agents.objetivo = {
+            x: 0,
+            y: 0,
+            carrying: null,
+            score: 0,
+            knownResources: new Map(),
+            symbol: '🤖',
+            class: 'agent-objetivo'
+        };
+        
+        scoreSimpleElement.textContent = '0';
+        scoreStateElement.textContent = '0';
+        scoreObjectiveElement.textContent = '0';
+        crystalsElement.textContent = '0';
+        metalsElement.textContent = '0';
+        globalScoreElement.textContent = '0';
+        actionLog.innerHTML = '';
+        
+        init();
+        addToLog("Simulação reiniciada");
+    });
+
+    mapSizeSelect.addEventListener('change', () => {
+        if (!state.isRunning) {
+            config.mapSize = parseInt(mapSizeSelect.value);
+            init();
+        }
+    });
+
+    init();
+    addToLog("Pronto para começar!");
   </script>
 </body>
 </html>
