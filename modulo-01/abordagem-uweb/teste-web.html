@@ -68,15 +68,8 @@
       <p><strong>Agente por Objetivo (G):</strong> <span id="scoreG">0</span></p>
       <hr>
       <p><strong>Total:</strong> <span id="scoreTotal">0</span></p>
-    </div>
+      <br>
 
-    <div class="grid" id="grid"></div>
-
-    <div id="panel">
-      <h3>Painel de Controle</h3>
-      <button onclick="iniciarSimulacao()">Iniciar</button><br>
-      <button onclick="pausarSimulacao()">Pausar</button><br>
-      <button onclick="novaColeta()">Nova Coleta</button>
       <div class="legenda">
         <h4>Legenda</h4>
         <div><span class="cell cristal">C</span> Cristais Energéticos (10 pts)</div>
@@ -88,10 +81,27 @@
         <div><span class="cell goal">G</span> Agente Baseado em Objetivos</div>
       </div>
     </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div id="panel">
+      <h3>Painel de Controle</h3>
+      <button onclick="iniciarSimulacao()">Iniciar</button><br>
+      <button onclick="pausarSimulacao()">Pausar</button><br>
+      <button onclick="novaColeta()">Nova Coleta</button>
+      <br>
+      <h3>Configurações de Grid</h3>
+      <button onclick="tamanhoGrid(8)">Grid 8x8</button><br>
+      <button onclick="tamanhoGrid(10)">Grid 10x10</button><br>
+      <button onclick="tamanhoGrid(12)">Grid 12x12</button>
+
+    </div>
+
+
   </div>
 
   <script>
-    const gridSize = 8;
+    let gridSize = 10
     const grid = document.getElementById("grid");
     const scoreADisplay = document.getElementById("scoreA");
     const scoreSDisplay = document.getElementById("scoreS");
@@ -107,7 +117,7 @@
       'E': { class: 'estrutura', valor: 50 },
     };
 
-    const mapa = [];
+    let mapa = [];
     const base = { x: 0, y: 0 };
     let agente = { x: 0, y: 0 };
     let agenteEstado = { x: 0, y: 0, memoria: new Set() };
@@ -116,6 +126,13 @@
       carregando: false,
       alvo: null
     };
+
+    function tamanhoGrid(size){
+      gridSize=size;
+      criarMapa();
+      renderMapa();
+
+    }
 
     function criarMapa() {
       for (let i = 0; i < gridSize; i++) {
@@ -136,13 +153,12 @@
     }
 
     function renderMapa() {
-        // Adicione esta linha no início da função
+      
        grid.style.setProperty('--grid-size', gridSize);
-
        grid.style.display = 'grid';
-  grid.style.gridTemplateColumns = `repeat(${gridSize}, 30px)`;
-  grid.style.gridAutoRows = '30px';
-  grid.style.gap = '2px';
+       grid.style.gridTemplateColumns = `repeat(${gridSize}, 30px)`;
+       grid.style.gridAutoRows = '30px';
+       grid.style.gap = '2px';
 
       grid.innerHTML = '';
       for (let i = 0; i < gridSize; i++) {
