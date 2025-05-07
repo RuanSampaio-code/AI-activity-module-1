@@ -91,7 +91,7 @@
   </div>
 
   <script>
-    const gridSize = 10;
+    const gridSize = 8;
     const grid = document.getElementById("grid");
     const scoreADisplay = document.getElementById("scoreA");
     const scoreSDisplay = document.getElementById("scoreS");
@@ -136,6 +136,14 @@
     }
 
     function renderMapa() {
+        // Adicione esta linha no início da função
+       grid.style.setProperty('--grid-size', gridSize);
+
+       grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = `repeat(${gridSize}, 30px)`;
+  grid.style.gridAutoRows = '30px';
+  grid.style.gap = '2px';
+
       grid.innerHTML = '';
       for (let i = 0; i < gridSize; i++) {
         for (let j = 0; j < gridSize; j++) {
