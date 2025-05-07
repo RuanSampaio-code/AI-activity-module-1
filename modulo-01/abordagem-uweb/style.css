@@ -17,8 +17,8 @@ body {
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(10, 30px);
-    grid-template-rows: repeat(10, 30px);
+    grid-template-columns: repeat(var(--grid-size, 10), 30px);
+    grid-template-rows: repeat(var(--grid-size, 10), 30px);
     gap: 2px;
     background-color: #fff;
     padding: 10px;
