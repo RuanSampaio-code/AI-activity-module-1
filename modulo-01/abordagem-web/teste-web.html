@@ -20,7 +20,7 @@
         <hr>
         <p><strong>Cristais Coletados:</strong> <span id="crystals">0</span></p>
         <p><strong>Metais Coletados:</strong> <span id="metals">0</span></p>
-        <p><strong>Estruturas Coletadas:</strong> <span id="#">0</span></p>
+        <p><strong>Estruturas Coletadas:</strong> <span id="structure">0</span></p>
       </div>
       <div class="grid-controls">
         <label for="mapSize">Tamanho:</label>
@@ -34,6 +34,18 @@
       <button id="startBtn">Iniciar</button>
       <button id="pauseBtn">Pausar</button>
       <button id="resetBtn">Reiniciar</button>
+
+        <div class="timer-controls">
+            <h3>Cronômetro</h3>
+            <div>
+                <input type="checkbox" id="enableTimer"> Ativar Cronômetro
+            </div>
+            <div class="time-inputs" style="display: none;">
+                <input type="number" id="minutes" min="0" placeholder="Min" value="0">
+                <input type="number" id="seconds" min="0" max="59" placeholder="Seg" value="0">
+            </div>
+            <div id="timerDisplay">00:00</div>
+        </div>
     </div>
 
     <div class="grid-container">
@@ -107,9 +119,17 @@
         },
         crystalsCollected: 0,
         metalsCollected: 0,
+        structureColected: 0,
         isRunning: false,
         intervalId: null,
-        speed: 500
+        speed: 500,
+        // Dentro do objeto state:
+        timer: {
+            enabled: false,
+            duration: 0,    // tempo total em segundos
+            timeLeft: 0,    // tempo restante em segundos
+            intervalId: null
+        }
     };
 
     const mapElement = document.getElementById('map');
@@ -120,6 +140,7 @@
     const globalScoreElement = document.getElementById('globalScore');
     const crystalsElement = document.getElementById('crystals');
     const metalsElement = document.getElementById('metals');
+    const structureElement = document.getElementById('structure');
     const actionLog = document.getElementById('actionLog');
     const mapSizeSelect = document.getElementById('mapSize');
     const startBtn = document.getElementById('startBtn');
@@ -383,22 +404,28 @@
 }
 
 function collectStructureTogether(utilityAgent, objetivoAgent) {
-    const cell = state.map[objetivoAgent.y][objetivoAgent.x];
+     const cell = state.map[objetivoAgent.y][objetivoAgent.x];
     if (cell && cell.type === 'resource' && cell.resource === 'structure') {
         // Remove o recurso do mapa
         state.map[objetivoAgent.y][objetivoAgent.x] = null;
         
-        // Ambos agentes carregam (simbolicamente)
+        // Incrementa a contagem de estruturas coletadas
+        state.structureColected++;
+        structureElement.textContent = state.structureColected;
+        
+        // Divide os pontos entre os agentes
+        const valuePerAgent = cell.value ;
+        
         objetivoAgent.carrying = {
             type: 'structure',
             symbol: cell.symbol,
-            value: cell.value  // Divide os pontos ou não?
+            value: valuePerAgent
         };
         
         utilityAgent.carrying = {
             type: 'structure',
             symbol: cell.symbol,
-            value: cell.value  // Divide os pontos ou não?
+            value: valuePerAgent
         };
         
         addToLog(`Utilidade e Objetivo coletaram Estrutura juntos!`);
@@ -653,10 +680,11 @@ function findPathTo(agent, targetX, targetY) {
             if (agent.carrying.type === 'crystal') {
                 state.crystalsCollected++;
                 crystalsElement.textContent = state.crystalsCollected;
-            } else {
+            } else if (agent.carrying.type === 'metal') {
                 state.metalsCollected++;
                 metalsElement.textContent = state.metalsCollected;
-            }
+            } 
+        
             
             if (agent === state.agents.simple) {
                 scoreSimpleElement.textContent = agent.score;
@@ -686,11 +714,80 @@ function findPathTo(agent, targetX, targetY) {
         actionLog.prepend(logEntry);
     }
 
+    //Funcções do cronometro
+
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(state.timer.timeLeft / 60);
+        const seconds = state.timer.timeLeft % 60;
+        document.getElementById('timerDisplay').textContent = 
+            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+        if (state.timer.intervalId) clearInterval(state.timer.intervalId);
+        
+        state.timer.timeLeft = state.timer.duration;
+        updateTimerDisplay();
+        
+        state.timer.intervalId = setInterval(() => {
+            state.timer.timeLeft--;
+            updateTimerDisplay();
+            
+            if (state.timer.timeLeft <= 0) {
+                clearInterval(state.timer.intervalId);
+                state.isRunning = false;
+                addToLog("Tempo esgotado! Coleta parada.");
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(state.timer.intervalId);
+        state.timer.intervalId = null;
+    }
+
+    document.getElementById('enableTimer').addEventListener('change', function(e) {
+        const timeInputs = document.querySelector('.time-inputs');
+        timeInputs.style.display = e.target.checked ? 'block' : 'none';
+        state.timer.enabled = e.target.checked;
+    });
+
+    // Validação dos inputs
+    document.getElementById('minutes').addEventListener('input', function(e) {
+        this.value = Math.max(0, parseInt(this.value) || 0);
+    });
+
+    document.getElementById('seconds').addEventListener('input', function(e) {
+        let value = Math.max(0, parseInt(this.value) || 0);
+        this.value = Math.min(59, value);
+    });
+
     startBtn.addEventListener('click', () => {
         if (!state.isRunning) {
+            // Configura o cronômetro se estiver habilitado
+            if (state.timer.enabled) {
+                const minutes = parseInt(document.getElementById('minutes').value) || 0;
+                const seconds = parseInt(document.getElementById('seconds').value) || 0;
+                state.timer.duration = (minutes * 60) + seconds;
+                
+                if (state.timer.duration <= 0) {
+                    alert("Defina um tempo válido!");
+                    return;
+                }
+            }
+            
             state.isRunning = true;
+            
+            // Inicia o cronômetro se necessário
+            if (state.timer.enabled) {
+                startTimer();
+            }
+            
+            // Inicia a simulação
             state.intervalId = setInterval(moveAgents, state.speed);
-            addToLog("Simulação iniciada");
+            addToLog("Simulação iniciada" + 
+                (state.timer.enabled ? ` com cronômetro (${state.timer.duration}s)` : ""));
         }
     });
 
@@ -703,12 +800,33 @@ function findPathTo(agent, targetX, targetY) {
     });
 
     resetBtn.addEventListener('click', () => {
+
+        // Pare o cronômetro se estiver rodando
+        stopTimer();
+        
+        // Resetar estado do cronômetro
+        state.timer = {
+            enabled: false,
+            duration: 0,
+            timeLeft: 0,
+            intervalId: null
+        };
+        
+        // Resetar UI do cronômetro
+        document.getElementById('enableTimer').checked = false;
+        document.querySelector('.time-inputs').style.display = 'none';
+        document.getElementById('minutes').value = '0';
+        document.getElementById('seconds').value = '0';
+        document.getElementById('timerDisplay').textContent = '00:00';
+
+
         state.isRunning = false;
         clearInterval(state.intervalId);
         
         config.mapSize = parseInt(mapSizeSelect.value);
         state.crystalsCollected = 0;
         state.metalsCollected = 0;
+        state.structureColected = 0;
         
         state.agents.simple = {
             x: 0,
@@ -756,6 +874,7 @@ function findPathTo(agent, targetX, targetY) {
         scoreUtilityElement.textContent = '0';
         crystalsElement.textContent = '0';
         metalsElement.textContent = '0';
+        structureElement.textContent = '0';
         globalScoreElement.textContent = '0';
         actionLog.innerHTML = '';
         

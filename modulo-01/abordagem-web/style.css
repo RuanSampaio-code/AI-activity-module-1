@@ -124,3 +124,29 @@ select {
   background-color: #f8f8f8;
   border-radius: 5px;
 }
+
+
+
+/* Cronometro */
+.timer-controls {
+  margin-top: 20px;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.time-inputs {
+  margin: 10px 0;
+}
+
+.time-inputs input {
+  width: 60px;
+  margin-right: 5px;
+  padding: 5px;
+}
+
+#timerDisplay {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 10px 0;
+  color: #2c3e50;
+}
