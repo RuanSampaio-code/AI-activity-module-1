@@ -16,7 +16,7 @@
         <p><strong>Agente Simples:</strong> <span id="scoreSimple">0</span> pts</p>
         <p><strong>Agente Estado:</strong> <span id="scoreState">0</span> pts</p>
         <p><strong>Agente Objetivo:</strong> <span id="scoreObjective">0</span> pts</p>
-        <p><strong>Agente de Utilidade:</strong> <span id="#">0</span> pts</p>
+        <p><strong>Agente de Utilidade:</strong> <span id="scoreUtility">0</span> pts</p>
         <hr>
         <p><strong>Cristais Coletados:</strong> <span id="crystals">0</span></p>
         <p><strong>Metais Coletados:</strong> <span id="metals">0</span></p>
@@ -93,6 +93,16 @@
                 knownResources: new Map(),
                 symbol: '🤖',
                 class: 'agent-objetivo'
+            },
+            utilidade: {
+                x: 0,
+                y: 0,
+                carrying: null,
+                score: 0,
+                symbol: '🤖',
+                class: 'agent-utilidade',
+                helping: null,
+                knownResources: new Map() // Adicione esta linha
             }
         },
         crystalsCollected: 0,
@@ -106,6 +116,7 @@
     const scoreSimpleElement = document.getElementById('scoreSimple');
     const scoreStateElement = document.getElementById('scoreState');
     const scoreObjectiveElement = document.getElementById('scoreObjective');
+    const scoreUtilityElement = document.getElementById('scoreUtility');
     const globalScoreElement = document.getElementById('globalScore');
     const crystalsElement = document.getElementById('crystals');
     const metalsElement = document.getElementById('metals');
@@ -116,6 +127,7 @@
     const resetBtn = document.getElementById('resetBtn');
 
     function init() {
+        console.log("Iniciando simulação com agentes:", Object.keys(state.agents));
         createMap();
         placeBase();
         placeAgents();
@@ -143,6 +155,9 @@
         state.agents.state.y = 0;
         state.agents.objetivo.x = 0;
         state.agents.objetivo.y = 0;
+        state.agents.utilidade.x = 0;
+        state.agents.utilidade.y = 0;
+        state.agents.utilidade.helping = null; //Utilidade
         state.agents.state.visitedCells = new Set(['0,0']);
         state.agents.objetivo.knownResources = new Map();
     }
@@ -199,6 +214,7 @@
                     if (x === state.agents.simple.x && y === state.agents.simple.y) agentsHere.push(state.agents.simple);
                     if (x === state.agents.state.x && y === state.agents.state.y) agentsHere.push(state.agents.state);
                     if (x === state.agents.objetivo.x && y === state.agents.objetivo.y) agentsHere.push(state.agents.objetivo);
+                    if (x === state.agents.utilidade.x && y === state.agents.utilidade.y) agentsHere.push(state.agents.utilidade);
                     
                     if (agentsHere.length > 0) {
                         const agent = agentsHere[0];
@@ -224,6 +240,7 @@
         moveSimpleAgent();
         moveStateAgent();
         moveObjectiveAgent();
+        moveUtilityAgent();
         renderMap();
     }
 
@@ -293,6 +310,141 @@
             }
         }
     }
+//////////////
+    function moveUtilityAgent() {
+    const agent = state.agents.utilidade;
+    const objetivo = state.agents.objetivo;
+
+    // Se já está ajudando, continua o processo
+    if (agent.helping) {
+        // Verifica se o objetivo ainda está na estrutura
+        if (objetivo.x === agent.helping.x && objetivo.y === agent.helping.y) {
+            // Se ambos estão na mesma posição, coleta junto
+            if (agent.x === objetivo.x && agent.y === objetivo.y) {
+                collectStructureTogether(agent, objetivo);
+                agent.helping = null;
+                return;
+            }
+            // Senão, continua indo para o objetivo
+            const path = findPathTo(agent, objetivo.x, objetivo.y);
+            if (path.length > 1) {
+                const nextStep = path[1];
+                moveAgentTo(agent, nextStep.x, nextStep.y);
+            }
+            return;
+        } else {
+            // Objetivo saiu da posição, para de ajudar
+            agent.helping = null;
+        }
+    }
+
+    // Verifica se o objetivo está parado em uma estrutura (precisa de ajuda)
+    if (objetivo.carrying === null && 
+        state.map[objetivo.y]?.[objetivo.x]?.type === 'resource' && 
+        state.map[objetivo.y][objetivo.x].resource === 'structure') {
+        
+        // Calcula utilidade de ajudar (baseado na distância)
+        const distance = Math.abs(agent.x - objetivo.x) + Math.abs(agent.y - objetivo.y);
+        const utility = 1 / (distance + 1); // +1 para evitar divisão por zero
+        
+        // Limiar para decidir ajudar (ajustável)
+        if (utility > 0.3) {
+            agent.helping = { x: objetivo.x, y: objetivo.y };
+            const path = findPathTo(agent, objetivo.x, objetivo.y);
+            if (path.length > 1) {
+                const nextStep = path[1];
+                moveAgentTo(agent, nextStep.x, nextStep.y);
+            }
+            return;
+        }
+    }
+
+    // Comportamento padrão (similar ao agente objetivo)
+    updateResourceKnowledge(agent);
+    
+    if (agent.carrying) {
+        const path = findPathToBase(agent);
+        if (path.length > 1) {
+            const nextStep = path[1];
+            moveAgentTo(agent, nextStep.x, nextStep.y);
+        }
+    } else {
+        const target = findNearestResource(agent);
+        if (target) {
+            const path = findPathToResource(agent, target);
+            if (path.length > 1) {
+                const nextStep = path[1];
+                moveAgentTo(agent, nextStep.x, nextStep.y);
+            }
+        } else {
+            exploreRandomly(agent);
+        }
+    }
+}
+
+function collectStructureTogether(utilityAgent, objetivoAgent) {
+    const cell = state.map[objetivoAgent.y][objetivoAgent.x];
+    if (cell && cell.type === 'resource' && cell.resource === 'structure') {
+        // Remove o recurso do mapa
+        state.map[objetivoAgent.y][objetivoAgent.x] = null;
+        
+        // Ambos agentes carregam (simbolicamente)
+        objetivoAgent.carrying = {
+            type: 'structure',
+            symbol: cell.symbol,
+            value: cell.value  // Divide os pontos ou não?
+        };
+        
+        utilityAgent.carrying = {
+            type: 'structure',
+            symbol: cell.symbol,
+            value: cell.value  // Divide os pontos ou não?
+        };
+        
+        addToLog(`Utilidade e Objetivo coletaram Estrutura juntos!`);
+    }
+}
+
+function findPathTo(agent, targetX, targetY) {
+    const queue = [{ 
+        x: agent.x, 
+        y: agent.y, 
+        path: [], 
+        cost: 0 
+    }];
+    
+    const visited = new Set();
+    visited.add(`${agent.x},${agent.y}`);
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+
+        if (current.x === targetX && current.y === targetY) {
+            return current.path.concat([current]);
+        }
+
+        const neighbors = [
+            {x: current.x + 1, y: current.y},
+            {x: current.x - 1, y: current.y},
+            {x: current.x, y: current.y + 1},
+            {x: current.x, y: current.y - 1}
+        ].filter(pos => isValidPosition(pos.x, pos.y) && !visited.has(`${pos.x},${pos.y}`));
+
+        for (const neighbor of neighbors) {
+            if (!visited.has(`${neighbor.x},${neighbor.y}`)) {
+                visited.add(`${neighbor.x},${neighbor.y}`);
+                queue.push({
+                    x: neighbor.x,
+                    y: neighbor.y,
+                    path: current.path.concat([current]),
+                    cost: current.cost + 1
+                });
+            }
+        }
+    }
+    return [];
+}
+/////////////////////////////////////////////////////////////
 
     function findNearestResource(agent) {
         let closest = null;
@@ -510,8 +662,11 @@
                 scoreSimpleElement.textContent = agent.score;
             } else if (agent === state.agents.state) {
                 scoreStateElement.textContent = agent.score;
-            } else {
+            } else if (agent === state.agents.objetivo) {
                 scoreObjectiveElement.textContent = agent.score;
+            }else {
+                scoreUtilityElement.textContent = agent.score;
+
             }
             
             updateGlobalScore();
@@ -521,7 +676,7 @@
     }
 
     function updateGlobalScore() {
-        const total = state.agents.simple.score + state.agents.state.score + state.agents.objetivo.score;
+        const total = state.agents.simple.score + state.agents.state.score + state.agents.objetivo.score + state.agents.utilidade.score;
         globalScoreElement.textContent = total;
     }
 
@@ -583,10 +738,22 @@
             symbol: '🤖',
             class: 'agent-objetivo'
         };
+
+        state.agents.utilidade = {
+        x: 0,
+        y: 0,
+        carrying: null,
+        score: 0,
+        symbol: '🤖',
+        class: 'agent-utilidade',
+        helping: null,
+        knownResources: new Map() // Adicione esta linha
+    };
         
         scoreSimpleElement.textContent = '0';
         scoreStateElement.textContent = '0';
         scoreObjectiveElement.textContent = '0';
+        scoreUtilityElement.textContent = '0';
         crystalsElement.textContent = '0';
         metalsElement.textContent = '0';
         globalScoreElement.textContent = '0';
