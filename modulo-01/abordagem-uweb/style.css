@@ -51,9 +51,10 @@ body {
 .agent-simple { background-color: #4caf50; color: white; }
 .agent-estado { background-color: #2196F3; color: white; }
 .agent-objetivo { background-color: #e91e63; color: white; }
+.agent-utilidade { background-color: #9c27b0; color: white; }
 .cristal { background-color: #00bcd4; color: white; }
 .metal { background-color: #ff9800; color: white; }
-.estrutura { background-color: #9c27b0; color: white; }
+.estrutura { background-color: brown; color: white; }
 .base { background-color: #607d8b; color: white; }
 button {
   margin: 5px 0;
